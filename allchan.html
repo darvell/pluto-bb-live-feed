@@ -1,0 +1,101 @@
+
+<!DOCTYPE html>
+<!-- Hey! Get out of here! Naughty naughty! Go watch BB instead! -->
+<html>
+<head>
+<title>Pluto TV US</title>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<style>
+  body, html {
+    margin: 0;
+    padding: 0;
+  }
+  #videoContainer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+  #videoPlayer {
+    width: 100%;
+    height: 100%;
+  }
+  #channelSelector {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 999;
+    opacity: 0.5;
+  }
+</style>
+</head>
+<body>
+<select id="channelSelector"></select>
+<div id="videoContainer">
+<video id="videoPlayer" controls autoplay></video>
+</div>
+<script>
+    async function fetchData() {
+      const REPLACEMENT_QUERY_PARAMS = `advertisingId=&appName=web&appVersion=7.7.0-18f7ab32608969ea5bcbce8d0e23b9d0e1b24717&app_name=web&clientDeviceType=0&clientID=${Math.random()}&clientModelNumber=1.0.0&country=US&deviceDNT=false&deviceId=${Math.random()}&deviceLat=69.00&deviceLon=-420.00&deviceMake=chrome&deviceModel=web&deviceType=web&deviceVersion=116.0.0&marketingRegion=US&serverSideAds=false&sessionID=${Math.random()}&sid=${Math.random()}&userId=`;
+      const response = await fetch("https://bb.crate.audio/?targetUrl=https%3A%2F%2Fapi.pluto.tv%2Fv2%2Fchannels.json", {
+        headers: {
+          "X-Forwarded-For": "68.105.219." + Math.floor(Math.random() * 255) // Honestly: LOL that this works.
+        }
+      });
+      const pluto_us_feeds = await response.json();
+      const pluto_us_channels = [];
+      
+      for (const channel of pluto_us_feeds) {
+        let url = channel.stitched.urls[0].url.split("?")[0];
+
+        // Lets cook the URL through our CORS proxy so the m3u8 comes through. We shouldn't need to eat much bandwidth.
+        let bb_proxy = "https://bb.crate.audio/?targetUrl=" + encodeURIComponent(url) + "&" + REPLACEMENT_QUERY_PARAMS; 
+
+        url += REPLACEMENT_QUERY_PARAMS;
+        pluto_us_channels.push({
+          name: channel.name,
+          url: bb_proxy
+        });
+      }
+      
+      const channelSelector = document.getElementById("channelSelector");
+      for (const channel of pluto_us_channels) {
+        const option = document.createElement('option');
+        option.value = channel.url;
+        option.textContent = channel.name;
+        channelSelector.appendChild(option);
+      }
+
+      const video = document.getElementById("videoPlayer");
+
+      const hls = new Hls();
+
+      function loadChannel(url) {
+        if (Hls.isSupported()) {
+          hls.loadSource(url);
+          hls.attachMedia(video);
+          hls.on(Hls.Events.MANIFEST_PARSED, function() {
+            video.play();
+          });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = url;
+          video.addEventListener('canplay', function() {
+            video.play();
+          });
+        }
+      }
+      
+      channelSelector.addEventListener("change", function() {
+        loadChannel(this.value);
+      });
+      
+      if (pluto_us_channels.length > 0) {
+        loadChannel(pluto_us_channels[0].url);
+      }
+    }
+
+    fetchData();
+  </script>
+</body>
+</html>
