@@ -50,12 +50,12 @@
         let url = channel.stitched.urls[0].url.split("?")[0];
 
         // Lets cook the URL through our CORS proxy so the m3u8 comes through. We shouldn't need to eat much bandwidth.
-        let bb_proxy = "https://royal-cherry-3e6b.musclebird.workers.dev/?targetUrl=" + encodeURIComponent(url) + "&" + REPLACEMENT_QUERY_PARAMS; 
-
+        //let bb_proxy = "https://royal-cherry-3e6b.musclebird.workers.dev/?targetUrl=" + encodeURIComponent(url) + "&" + REPLACEMENT_QUERY_PARAMS; 
+        
         url += REPLACEMENT_QUERY_PARAMS;
         pluto_us_channels.push({
           name: channel.name,
-          url: bb_proxy
+          url: url
         });
       }
       
